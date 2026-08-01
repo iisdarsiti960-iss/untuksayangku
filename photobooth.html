@@ -224,19 +224,19 @@
     const totalPhotos = 6;
     let isRunning = false;
 
-    const boxPositions = [
-        // --- BARIS 1 (ATAS) ---
-        { x: 0.125, y: 0.138, w: 0.355, h: 0.218 }, // Kiri Atas
-        { x: 0.520, y: 0.138, w: 0.355, h: 0.218 }, // Kanan Atas
-    
-        // --- BARIS 2 (TENGAH) ---
-        { x: 0.125, y: 0.370, w: 0.355, h: 0.218 }, // Kiri Tengah
-        { x: 0.520, y: 0.370, w: 0.355, h: 0.218 }, // Kanan Tengah
-    
-        // --- BARIS 3 (BAWAH) ---
-        { x: 0.125, y: 0.610, w: 0.355, h: 0.218 }, // Kiri Bawah
-        { x: 0.520, y: 0.610, w: 0.355, h: 0.218 }  // Kanan Bawah
-    ];
+   const boxPositions = [
+    // --- BARIS 1 (ATAS) ---
+    { x: 0.128, y: 0.088, w: 0.352, h: 0.205 }, // Kiri Atas
+    { x: 0.520, y: 0.088, w: 0.352, h: 0.205 }, // Kanan Atas
+
+    // --- BARIS 2 (TENGAH) ---
+    { x: 0.128, y: 0.315, w: 0.352, h: 0.205 }, // Kiri Tengah
+    { x: 0.520, y: 0.315, w: 0.352, h: 0.205 }, // Kanan Tengah
+
+    // --- BARIS 3 (BAWAH) ---
+    { x: 0.128, y: 0.542, w: 0.352, h: 0.205 }, // Kiri Bawah
+    { x: 0.520, y: 0.542, w: 0.352, h: 0.205 }  // Kanan Bawah
+];
 
     function drawLiveGrid() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
