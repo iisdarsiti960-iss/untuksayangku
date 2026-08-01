@@ -115,13 +115,13 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
             
-            padding-top: 11.0%;
-            padding-bottom: 23.0%;
-            padding-left: 10.0%;
-            padding-right: 10.0%;
+            padding-top: 13.0%;
+            padding-bottom: 26.2%;
+            padding-left: 12.5%;
+            padding-right: 12.5%;
 
-            row-gap: 2.0%;
-            column-gap: 3.0%;
+            row-gap: 3.7%;
+            column-gap: 5.0%;
             
             box-sizing: border-box;
             pointer-events: none;
@@ -217,22 +217,22 @@
     let isRunning = false;
     let audioCtx = null;
 
-    // UKURAN FOTO DIMEKARKAN SUPAYA MASUK KE BELAKANG BINGKAI (ANTI HITAM)
+    // KOORDINAT FOTO PRESISI MASUK DI DALAM KOTAK PUTIH
     const boxPositions = [
-        // BARIS 1
-        { x: 0.080, y: 0.080, w: 0.420, h: 0.230 },
-        { x: 0.500, y: 0.080, w: 0.420, h: 0.230 },
+        // BARIS 1 (ATAS)
+        { x: 0.125, y: 0.130, w: 0.350, h: 0.178 },
+        { x: 0.525, y: 0.130, w: 0.350, h: 0.178 },
 
-        // BARIS 2
-        { x: 0.080, y: 0.300, w: 0.420, h: 0.230 },
-        { x: 0.500, y: 0.300, w: 0.420, h: 0.230 },
+        // BARIS 2 (TENGAH)
+        { x: 0.125, y: 0.345, w: 0.350, h: 0.178 },
+        { x: 0.525, y: 0.345, w: 0.350, h: 0.178 },
 
-        // BARIS 3
-        { x: 0.080, y: 0.520, w: 0.420, h: 0.230 },
-        { x: 0.500, y: 0.520, w: 0.420, h: 0.230 }
+        // BARIS 3 (BAWAH)
+        { x: 0.125, y: 0.560, w: 0.350, h: 0.178 },
+        { x: 0.525, y: 0.560, w: 0.350, h: 0.178 }
     ];
 
-    // INI SISTEM SUARA CEKREK KAMERA
+    // FUNGSI SUARA CEKREK
     function playCameraSound() {
         try {
             if (!audioCtx) {
@@ -242,7 +242,6 @@
                 audioCtx.resume();
             }
 
-            // Suara Klik 1
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'square';
@@ -257,7 +256,6 @@
             osc.start();
             osc.stop(audioCtx.currentTime + 0.05);
 
-            // Suara Klik 2 (Cekrek)
             setTimeout(() => {
                 const osc2 = audioCtx.createOscillator();
                 const gain2 = audioCtx.createGain();
@@ -274,7 +272,7 @@
                 osc2.stop(audioCtx.currentTime + 0.08);
             }, 50);
         } catch(e) {
-            console.log("Audio Error:", e);
+            console.log("Audio error", e);
         }
     }
 
@@ -337,7 +335,6 @@
         if(e) e.preventDefault();
         if (isRunning) return;
         
-        // Aktifkan Audio Context pas pertama klik tombol
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -358,7 +355,7 @@
             }
 
             statusText.innerText = `📸 *CEKREK!* (Foto ${i})`;
-            playCameraSound(); // Panggil Suara Cekrek
+            playCameraSound();
             
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = video.videoWidth || 600;
@@ -388,7 +385,10 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        // 1. Tempel foto-foto yang ukurannya sudah dimekarkan
+        // 1. Gambar Bingkai Utama Dulu
+        ctx.drawImage(frameOverlay, 0, 0, width, height);
+
+        // 2. Tempel foto-foto tepat di kotak putihnya
         capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
@@ -409,14 +409,11 @@
                 srcX = (imgW - srcW) / 2;
             } else {
                 srcH = imgW / destAspect;
-                srcY = (imgH - srcY) / 2;
+                srcY = (imgH - srcH) / 2;
             }
 
             ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
-
-        // 2. Timpa dengan bingkai frame.png di lapisan paling atas
-        ctx.drawImage(frameOverlay, 0, 0, width, height);
 
         document.getElementById('live-grid').style.display = 'none';
         previewCanvas.style.display = 'block';
