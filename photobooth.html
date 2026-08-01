@@ -104,6 +104,7 @@
             z-index: 2;
         }
 
+        /* TAMPILAN KAMERA SESUAI UKURAN KOTAK HITAM */
         .live-grid {
             position: absolute;
             top: 0;
@@ -115,13 +116,13 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
             
-            padding-top: 13.0%;
-            padding-bottom: 26.2%;
-            padding-left: 12.5%;
-            padding-right: 12.5%;
+            padding-top: 5.75%;
+            padding-bottom: 23.3%;
+            padding-left: 5.25%;
+            padding-right: 5.25%;
 
-            row-gap: 3.7%;
-            column-gap: 5.0%;
+            row-gap: 2.8%;
+            column-gap: 9.0%;
             
             box-sizing: border-box;
             pointer-events: none;
@@ -130,7 +131,7 @@
         .grid-box {
             width: 100%;
             height: 100%;
-            border-radius: 2px;
+            border-radius: 0px;
             background-color: #000;
             display: block;
         }
@@ -217,22 +218,21 @@
     let isRunning = false;
     let audioCtx = null;
 
-    // KOORDINAT FOTO PRESISI MASUK DI DALAM KOTAK PUTIH
+    // ANGKA PRESISI TEPAT UKURAN BINGKAI HITAM KETIKA DIPERIKSA DENGAN SKALA PIKSEL GAMBARMU
     const boxPositions = [
-        // BARIS 1 (ATAS)
-        { x: 0.125, y: 0.130, w: 0.350, h: 0.178 },
-        { x: 0.525, y: 0.130, w: 0.350, h: 0.178 },
+        // Baris 1 (Atas)
+        { x: 0.0525, y: 0.0575, w: 0.4025, h: 0.218 },
+        { x: 0.5450, y: 0.0575, w: 0.4025, h: 0.218 },
 
-        // BARIS 2 (TENGAH)
-        { x: 0.125, y: 0.345, w: 0.350, h: 0.178 },
-        { x: 0.525, y: 0.345, w: 0.350, h: 0.178 },
+        // Baris 2 (Tengah)
+        { x: 0.0525, y: 0.3035, w: 0.4025, h: 0.218 },
+        { x: 0.5450, y: 0.3035, w: 0.4025, h: 0.218 },
 
-        // BARIS 3 (BAWAH)
-        { x: 0.125, y: 0.560, w: 0.350, h: 0.178 },
-        { x: 0.525, y: 0.560, w: 0.350, h: 0.178 }
+        // Baris 3 (Bawah)
+        { x: 0.0525, y: 0.5495, w: 0.4025, h: 0.218 },
+        { x: 0.5450, y: 0.5495, w: 0.4025, h: 0.218 }
     ];
 
-    // FUNGSI SUARA CEKREK
     function playCameraSound() {
         try {
             if (!audioCtx) {
@@ -385,10 +385,7 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        // 1. Gambar Bingkai Utama Dulu
-        ctx.drawImage(frameOverlay, 0, 0, width, height);
-
-        // 2. Tempel foto-foto tepat di kotak putihnya
+        // 1. Gambar Foto dulu
         capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
@@ -414,6 +411,9 @@
 
             ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
+
+        // 2. Timpa Bingkai Frame di atasnya
+        ctx.drawImage(frameOverlay, 0, 0, width, height);
 
         document.getElementById('live-grid').style.display = 'none';
         previewCanvas.style.display = 'block';
