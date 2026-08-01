@@ -58,7 +58,6 @@
             min-height: 20px;
         }
 
-        /* Area Wrapper Kamera & Frame */
         .booth-wrapper {
             position: relative;
             width: 100%;
@@ -94,7 +93,6 @@
             display: none;
         }
 
-        /* Gambar Frame PNG Overlay */
         .frame-img {
             position: absolute;
             top: 0;
@@ -106,7 +104,6 @@
             z-index: 2;
         }
 
-        /* Container Grid 6 Kotak */
         .live-grid {
             position: absolute;
             top: 0;
@@ -218,57 +215,66 @@
     let capturedPhotos = [];
     const totalPhotos = 6;
     let isRunning = false;
+    let audioCtx = null;
 
-    // FOTO DIBIKIN MEKAR SEDIKIT SUPAYA MASUK KE BELAKANG BINGKAI TANPA CELAH HITAM
+    // UKURAN FOTO DIMEKARKAN SUPAYA MASUK KE BELAKANG BINGKAI (ANTI HITAM)
     const boxPositions = [
         // BARIS 1
-        { x: 0.100, y: 0.095, w: 0.395, h: 0.220 },
-        { x: 0.505, y: 0.095, w: 0.395, h: 0.220 },
+        { x: 0.080, y: 0.080, w: 0.420, h: 0.230 },
+        { x: 0.500, y: 0.080, w: 0.420, h: 0.230 },
 
         // BARIS 2
-        { x: 0.100, y: 0.315, w: 0.395, h: 0.220 },
-        { x: 0.505, y: 0.315, w: 0.395, h: 0.220 },
+        { x: 0.080, y: 0.300, w: 0.420, h: 0.230 },
+        { x: 0.500, y: 0.300, w: 0.420, h: 0.230 },
 
         // BARIS 3
-        { x: 0.100, y: 0.535, w: 0.395, h: 0.220 },
-        { x: 0.505, y: 0.535, w: 0.395, h: 0.220 }
+        { x: 0.080, y: 0.520, w: 0.420, h: 0.230 },
+        { x: 0.500, y: 0.520, w: 0.420, h: 0.230 }
     ];
 
-    // EFEK SUARA CEKREK
+    // INI SISTEM SUARA CEKREK KAMERA
     function playCameraSound() {
         try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // Suara Klik 1
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.08);
-            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+
             gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-            
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.08);
+            osc.stop(audioCtx.currentTime + 0.05);
 
+            // Suara Klik 2 (Cekrek)
             setTimeout(() => {
                 const osc2 = audioCtx.createOscillator();
                 const gain2 = audioCtx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(800, audioCtx.currentTime);
-                osc2.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                osc2.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.08);
 
-                gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
 
                 osc2.connect(gain2);
                 gain2.connect(audioCtx.destination);
                 osc2.start();
-                osc2.stop(audioCtx.currentTime + 0.05);
-            }, 60);
+                osc2.stop(audioCtx.currentTime + 0.08);
+            }, 50);
         } catch(e) {
-            console.log("Audio Error", e);
+            console.log("Audio Error:", e);
         }
     }
 
@@ -331,6 +337,11 @@
         if(e) e.preventDefault();
         if (isRunning) return;
         
+        // Aktifkan Audio Context pas pertama klik tombol
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
         isRunning = true;
         snapBtn.style.display = 'none';
         capturedPhotos = [];
@@ -347,7 +358,7 @@
             }
 
             statusText.innerText = `📸 *CEKREK!* (Foto ${i})`;
-            playCameraSound(); // PANGGIL SUARA CEKREK
+            playCameraSound(); // Panggil Suara Cekrek
             
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = video.videoWidth || 600;
@@ -377,7 +388,7 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        // 1. Gambar semua foto dulu di lapisan paling bawah
+        // 1. Tempel foto-foto yang ukurannya sudah dimekarkan
         capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
@@ -398,13 +409,13 @@
                 srcX = (imgW - srcW) / 2;
             } else {
                 srcH = imgW / destAspect;
-                srcY = (imgH - srcH) / 2;
+                srcY = (imgH - srcY) / 2;
             }
 
             ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
 
-        // 2. Timpa dengan gambar frame.png transparan di atasnya!
+        // 2. Timpa dengan bingkai frame.png di lapisan paling atas
         ctx.drawImage(frameOverlay, 0, 0, width, height);
 
         document.getElementById('live-grid').style.display = 'none';
