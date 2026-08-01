@@ -217,7 +217,6 @@
     let isRunning = false;
     let audioCtx = null;
 
-    // Kooridinat presisi per kotak
     const boxPositions = [
         { x: 0.052, y: 0.056, w: 0.405, h: 0.222 },
         { x: 0.543, y: 0.056, w: 0.405, h: 0.222 },
@@ -272,7 +271,7 @@
         }
     }
 
-    // Mengembalikan ke sistem pratinjau biasa awal
+    // LOGIKA PENANGKAPAN GAMBAR STANDAR/NORMAL
     function drawLiveGrid() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             gridCanvases.forEach(canvas => {
