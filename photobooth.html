@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photobooth Virtual (6 Foto)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #500014;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .card {
+            background-color: #6a0d27;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #f1d592;
+            margin-bottom: 6px; 
+        }
+
+        /* Status Hitung Mundur / Indikator Foto */
+        .status-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            color: #ebd292;
+            margin-bottom: 15px;
+            min-height: 20px;
+        }
+
+        /* Area Wrapper Kamera & Frame */
+    .booth-wrapper {
+        position: relative;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto 18px auto;
+    aspect-ratio: 2 / 3; 
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #1a1a1a; /* Ubah ke abu gelap biar keliatan kalau kamera loading */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+
+    #webcam {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+        z-index: 1;
+        /* Memberikan efek zoom agar live preview terasa lebih pas per kotak */
+        filter: contrast(105%);
+    }
+
+    #preview-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Agar hasil akhir tidak gepeng/terpotong */
+        z-index: 3;
+        display: none;
+    }
+
+    /* Gambar Frame PNG Overlay */
+    .frame-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* GANTI 'cover' MENJADI 'contain' AGAR TIDAK KEPOTONG SAMPLINGNYA */
+        object-fit: contain; 
+        pointer-events: none;
+        z-index: 2;
+    }
+
+        /* Container Grid 6 Kotak Pas Sesuai Posisi Frame */
+    .live-grid {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        /* Padding presisi untuk area 6 kotak di frame */
+        padding-top: 9%;
+        padding-bottom: 34%;
+        padding-left: 5%;
+        padding-right: 5%;
+
+        /* Jarak antar baris dan kolom */
+        row-gap: 2.5%;
+        column-gap: 8%;
+        
+        box-sizing: border-box;
+        pointer-events: none;
+    }
+
+    .grid-box {
+        width: 100%;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px; /* Sedikit lengkung agar serasi */
+    display: block;
+}
+
+            /* Tombol Navigasi & Aksi */
+            .btn-group {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button, .btn-download, .btn-back {
+                font-family: 'Poppins', sans-serif;
+                background-color: #f1d592;
+                color: #500014;
+                border: none;
+                padding: 12px 20px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                border-radius: 25px;
+                cursor: pointer;
+                text-decoration: none;
+                display: block;
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+
+            button:active, .btn-download:active {
+                transform: scale(0.97);
+            }
+
+            .btn-secondary {
+                background-color: transparent;
+                color: #ffffff;
+                border: 1px solid #ffffff;
+            }
+
+            .btn-back {
+                background-color: transparent;
+                color: #f1d592;
+                border: 1px solid #f1d592;
+                margin-top: 5px;
+            }
+        </style>
+    </head>
+    <body>
+
+    <div class="card">
+        <h2>Photobooth Virtual</h2>
+        <div id="status" class="status-text">Siap untuk 6 foto!</div>
+
+        <div class="booth-wrapper">
+           <!-- Video utama kita sembunyikan (tetap ada untuk ambil stream kamera) -->
+            <video id="webcam" autoplay playsinline muted style="display: none;"></video>
+    
+        <!-- Container 6 Grid untuk Live Preview per-kotak -->
+        <div id="live-grid" class="live-grid">
+            <canvas class="grid-box"></canvas>
+            <canvas class="grid-box"></canvas>
+            <canvas class="grid-box"></canvas>
+            <canvas class="grid-box"></canvas>
+            <canvas class="grid-box"></canvas>
+            <canvas class="grid-box"></canvas>
+        </div>
+
+        <!-- Canvas Hasil Foto Akhir -->
+        <canvas id="preview-canvas" style="display: none;"></canvas>
+            
+            <!-- Pastikan nama file frame kamu sesuai -->
+            <img src="frame.png" id="frame-overlay" class="frame-img" alt="Frame">
+        </div>
+
+        <div class="btn-group">
+            <button id="snap-btn">📸 Mulai Sesi (6 Foto)</button>
+            <a id="download-btn" class="btn-download" style="display: none;">⬇️ Download Hasil Foto</a>
+            <button id="reset-btn" class="btn-secondary" style="display: none;">🔄 Foto Ulang</button>
+            <a href="index.html" class="btn-back">⬅️ Kembali</a>
+        </div>
+    </div>
+
+    <script>
+    const video = document.getElementById('webcam');
+    const frameOverlay = document.getElementById('frame-overlay');
+    const previewCanvas = document.getElementById('preview-canvas');
+    const snapBtn = document.getElementById('snap-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const statusText = document.getElementById('status');
+    
+    const ctx = previewCanvas.getContext('2d');
+    let capturedPhotos = [];
+    const totalPhotos = 6;
+
+
+const boxPositions = [
+    // --- BARIS 1 (ATAS) ---
+    { x: 0.050, y: 0.125, w: 0.420, h: 0.235 }, // Kiri Atas
+    { x: 0.530, y: 0.125, w: 0.420, h: 0.235 }, // Kanan Atas
+
+    // --- BARIS 2 (TENGAH) ---
+    { x: 0.050, y: 0.380, w: 0.420, h: 0.235 }, // Kiri Tengah
+    { x: 0.530, y: 0.380, w: 0.420, h: 0.235 }, // Kanan Tengah
+
+    // --- BARIS 3 (BAWAH) ---
+    { x: 0.050, y: 0.635, w: 0.420, h: 0.235 }, // Kiri Bawah
+    { x: 0.530, y: 0.635, w: 0.420, h: 0.235 }  // Kanan Bawah
+];
+
+const gridCanvases = document.querySelectorAll('.grid-box');
+
+// Fungsi untuk menggambar stream kamera ke 6 kotak secara terus-menerus
+function drawLiveGrid() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        gridCanvases.forEach(canvas => {
+            const gCtx = canvas.getContext('2d');
+            
+            // Samakan ukuran internal canvas dengan ukuran tampilannya di layar
+            const rect = canvas.getBoundingClientRect();
+            if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            }
+
+            const vW = video.videoWidth;
+            const vH = video.videoHeight;
+            const cW = canvas.width;
+            const cH = canvas.height;
+
+            // Logika Crop/Cover (Anti Penyet & Anti Kepotong Aneh)
+            const videoAspect = vW / vH;
+            const canvasAspect = cW / cH;
+
+            let sX = 0, sY = 0, sW = vW, sH = vH;
+
+            if (videoAspect > canvasAspect) {
+                sW = vH * canvasAspect;
+                sX = (vW - sW) / 2;
+            } else {
+                sH = vW / canvasAspect;
+                sY = (vH - sH) / 2;
+            }
+
+            gCtx.save();
+            // Efek Cermin (Mirror)
+            gCtx.translate(cW, 0);
+            gCtx.scale(-1, 1);
+            gCtx.drawImage(video, sX, sY, sW, sH, 0, 0, cW, cH);
+            gCtx.restore();
+        });
+    }
+    requestAnimationFrame(drawLiveGrid);
+}
+
+// Jalankan live grid saat kamera aktif
+video.addEventListener('play', () => {
+    drawLiveGrid();
+});
+
+    // Akses Kamera
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false
+    })
+    .then((stream) => { video.srcObject = stream; })
+    .catch((err) => { alert("Gagal akses kamera: " + err); });
+
+    // Mulai Sesi Foto
+    snapBtn.addEventListener('click', async () => {
+        snapBtn.style.display = 'none';
+        capturedPhotos = [];
+
+        for (let i = 1; i <= totalPhotos; i++) {
+            // Hitung mundur 3 detik per foto
+            for (let countdown = 3; countdown > 0; countdown--) {
+                statusText.innerText = `Foto ke-${i} dalam ${countdown}...`;
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            statusText.innerText = `📸 *CEKREK!* (Foto ${i})`;
+            
+            // Simpan hasil foto sementara
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth || 600;
+            tempCanvas.height = video.videoHeight || 800;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.save();
+            tempCtx.scale(-1, 1); // Mirror kamera
+            tempCtx.drawImage(video, -tempCanvas.width, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.restore();
+
+            capturedPhotos.push(tempCanvas);
+            await new Promise(r => setTimeout(r, 800));
+        }
+
+        statusText.innerText = "Selesai! Menyusun foto 4x6...";
+        renderFinalFrame();
+    });
+    
+
+    // Render Gabungan Foto ke Frame 4x6 Inci
+    function renderFinalFrame() {
+        // Resolusi standar cetak 4x6 inci (300 DPI = 1200x1800 piksel)
+        const width = frameOverlay.naturalWidth || 1200;
+        const height = frameOverlay.naturalHeight || 1800;
+
+        previewCanvas.width = width;
+        previewCanvas.height = height;
+
+        // Bersihkan canvas sebelum menggambar
+        ctx.clearRect(0, 0, width, height);
+
+        // Render 6 foto sesuai koordinat
+        capturedPhotos.forEach((photoCanvas, index) => {
+            const pos = boxPositions[index];
+            const x = pos.x * width;
+            const y = pos.y * height;
+            const w = pos.w * width;
+            const h = pos.h * height;
+
+            const imgW = photoCanvas.width;
+            const imgH = photoCanvas.height;
+
+            // Logika Object-Fit COVER (Anti Gepeng/Penyet)
+            const imgAspect = imgW / imgH;
+            const destAspect = destW / destH;
+
+            let srcX = 0, srcY = 0, srcW = imgW, srcH = imgH;
+
+            if (imgAspect > destAspect) {
+                srcW = imgH * destAspect;
+                srcX = (imgW - srcW) / 2;
+            } else {
+                srcH = imgW / destAspect;
+                srcY = (imgH - srcH) / 2;
+            }
+
+           // Gambar Foto Penuh di Belakang
+            ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+    });
+    
+
+        // Tempelkan Frame PNG di Paling Atas
+        ctx.drawImage(frameOverlay, 0, 0, width, height);
+
+        // Tampilkan Preview & Siapkan Link Download
+        video.style.display = 'none';
+        previewCanvas.style.display = 'block';
+
+        const resultDataUrl = previewCanvas.toDataURL('image/png');
+        downloadBtn.href = resultDataUrl;
+        downloadBtn.download = `photobooth-4x6-${Date.now()}.png`;
+
+        statusText.innerText = "Hasil Foto 4x6 Siap!";
+        downloadBtn.style.display = 'block';
+        resetBtn.style.display = 'block';
+    }
+
+    // Reset Foto Ulang
+    resetBtn.addEventListener('click', () => {
+        previewCanvas.style.display = 'none';
+        video.style.display = 'block';
+        snapBtn.style.display = 'block';
+        downloadBtn.style.display = 'none';
+        resetBtn.style.display = 'none';
+        statusText.innerText = "Siap untuk 6 foto!";
+    });
+
+    
+</script>
+</body>
+</html>

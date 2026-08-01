@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>His Special Day - Realtime Luxury Clock</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Playfair+Display:ital,wght=1,500&family=Quicksand:wght400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================
+           1. ANIMASI BACKGROUND MIDNIGHT NEBULA BERGERAK
+           ========================================== */
+        @keyframes auroraMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes bgGlow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        @keyframes floatingUp {
+            0% { transform: translateY(110vh) translateX(0) scale(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) translateX(var(--random-x)) scale(1) rotate(360deg); opacity: 0; }
+        }
+        @keyframes burstOut {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0.3); opacity: 0; }
+        }
+
+        /* --- TRANSISI ANIMASI MASUK PER HALAMAN --- */
+        @keyframes animPage1 { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes animPage2 { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        @keyframes animPage3 { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes animPage4 { from { opacity: 0; transform: scale(1.2); filter: blur(5px); } to { opacity: 1; transform: scale(1); filter: blur(0); } }
+        @keyframes animPage5 { from { opacity: 0; transform: rotateX(-70deg); perspective: 1000px; } to { opacity: 1; transform: rotateX(0); } }
+        @keyframes animPage6 { from { opacity: 0; filter: blur(8px); } to { opacity: 1; filter: blur(0); } }
+        @keyframes animPage7 { from { opacity: 0; transform: translateY(100px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes animPage8 { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+        @keyframes floatEffect { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+
+        /* --- STYLE DASAR (MASCULINE TONE) --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: #050811; color: #e2e8f0; font-family: 'Quicksand', sans-serif;
+            overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 10px;
+        }
+
+        /* Background Utama Deep Navy & Black Charcoal */
+        .bg-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #060b19, #0a142c, #111827, #020617);
+            background-size: 400% 400%; animation: auroraMove 15s ease infinite; z-index: -4;
+        }
+        .bg-overlay {
+            position: fixed; top: -10%; left: -10%; width: 120%; height: 120%;
+            background: radial-gradient(circle at 30% 40%, rgba(210, 1, 1, 0.711) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(255, 0, 0, 0.556) 0%, transparent 50%);
+            animation: bgGlow 8s ease-in-out infinite; z-index: -3; pointer-events: none;
+        }
+        #particle-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+        .particle { position: absolute; animation: floatingUp linear forwards; }
+        
+        /* Efek kilauan silver emas */
+        .burst-love { position: absolute; pointer-events: none; z-index: 99; font-size: 20px; animation: burstOut 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; }
+
+        /* --- STRUKTUR SECTIONS --- */
+        section { display: none; width: 100%; max-width: 420px; padding: 15px; text-align: center; position: relative; }
+        
+        #page1.active { display: block; animation: animPage1 1s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        #page2.active { display: block; animation: animPage2 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        #page3.active { display: block; animation: animPage3 0.9s ease-out both; }
+        #page4.active { display: block; animation: animPage4 1.2s cubic-bezier(0.25, 1, 0.5, 1) both; }
+        #page5.active { display: block; animation: animPage5 1.1s ease-out both; }
+        #page6.active { display: block; animation: animPage6 1.2s ease both; }
+        #page7.active { display: block; animation: animPage7 0.8s ease-out both; }
+        #page8.active { display: block; animation: animPage8 1.3s ease-out both; }
+
+        /* --- TYPOGRAPHY MASKULIN EMAS/SILVER --- */
+        .subtitle { font-size: 10px; letter-spacing: 4px; color: #ebd292; margin-bottom: 12px; text-transform: uppercase; text-shadow: 0 0 8px rgba(253, 147, 147, 0.4); }
+        .title { font-family: 'Playfair Display', serif; font-size: 2.1rem; margin-bottom: 18px; line-height: 1.35; color: #fff; }
+        .title span { font-family: 'Cinzel', serif; color: #ebd292; font-size: 2.2rem; font-weight: 700; text-shadow: 0 0 12px rgba(245, 158, 11, 0.4); letter-spacing: 1px; }
+        .desc { font-size: 13px; color: #b89494; margin-bottom: 25px; padding: 0 10px; line-height: 1.6; }
+
+        /* --- JAM REALTIME DIGITAL STYLE --- */
+        .countdown-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 25px; }
+        .time-box { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); padding: 14px 10px; border-radius: 12px; min-width: 75px; }
+        .time-box span { font-size: 1.6rem; font-weight: bold; display: block; color: #ff022c; text-shadow: 0 0 8px rgba(235, 13, 17, 0.3); font-family: monospace; }
+        .time-box p { font-size: 9px; color: #8b6466; text-transform: uppercase; margin-top: 2px; }
+
+        /* --- BUTTONS GANTENG --- */
+        .btn {
+            background: linear-gradient(90deg, #ffffff, #f1f5f9); color: #ff022c; border: none; padding: 12px 28px; border-radius: 25px; 
+            font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase; font-size: 11px; width: 85%; margin: 0 auto; 
+            display: block; letter-spacing: 1px; box-shadow: 0 5px 20px rgba(255,255,255,0.05);
+        }
+        .btn:hover { background: linear-gradient(90deg, #ff022c, #ff022c); color: #fff; transform: translateY(-2px); box-shadow: 0 5px 25px rgba(233, 14, 14, 0.4); }
+
+        /* Ikon Kado */
+        .gift-wrapper { position: relative; display: inline-block; cursor: pointer; }
+        .gift-icon { font-size: 70px; color: #ff022c; margin: 25px 0; animation: floatEffect 3s infinite ease-in-out; text-shadow: 0 0 15px rgba(245,158,11,0.3); }
+
+        /* --- POLAROID SCENERY KIRI KANAN --- */
+        .polaroid-bg-scenery { position: relative; width: 100%; height: 260px; margin-bottom: 10px; }
+        .mini-polaroid {
+            position: absolute; background: white; padding: 5px 5px 15px 5px; width: 85px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.6); border-radius: 1px; animation: floatEffect 4s infinite ease-in-out;
+        }
+        .mini-polaroid img { width: 100%; height: 75px; object-fit: cover; }
+        
+        /* Posisi 5 Polaroid pas HP */
+        .p1 { top: 10%; left: 2%; transform: rotate(-8deg); animation-delay: 0s; }
+        .p2 { top: 50%; left: -5%; transform: rotate(6deg); animation-delay: 0.5s; }
+        .p3 { top: 15%; right: 2%; transform: rotate(10deg); animation-delay: 1s; }
+        .p4 { top: 52%; right: -3%; transform: rotate(-5deg); animation-delay: 1.5s; }
+        .p5 { top: 32%; left: 38%; transform: rotate(-3deg); width: 95px; z-index: 2; }
+
+        /* Polaroid Standar */
+        .polaroid-layout { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .polaroid { background: white; padding: 8px 8px 22px 8px; width: 130px; box-shadow: 0 15px 30px rgba(0,0,0,0.6); animation: floatEffect 4s infinite ease-in-out; }
+        .polaroid img { width: 100%; height: 115px; object-fit: cover; }
+
+        /* --- BOX SURAT --- */
+        .letter-box { background: rgba(42, 15, 15, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: left; max-height: 250px; overflow-y: auto; }
+        .letter-box p { font-size: 13px; line-height: 1.8; margin-bottom: 12px; color: #cbd5e1; }
+
+        /* --- GALERI --- */
+        .grid-memories { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0; max-height: 310px; overflow-y: auto; padding: 5px; }
+        .grid-memories .polaroid { width: 100%; animation: none; transform: rotate(0) !important; }
+
+        /* --- VIDEO CARD --- */
+        .video-card { width: 100%; max-width: 270px; border: 5px solid #fff; border-radius: 8px; overflow: hidden; margin: 15px auto; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        video { width: 100%; display: block; }
+
+        
+    </style>
+</head>
+<body>
+
+    <audio id="bg-music" loop>
+        <source src="assets/music.mp3" type="audio/mp3">
+    </audio>
+
+    <div class="-control" id="musicToggle" onclick="toggleMusic()">
+        <i class="fa-solid fa-volume-xmark" id="music-icon"></i>
+    </div>
+
+    <div class="bg-container"></div>
+    <div class="bg-overlay"></div>
+    <div id="particle-container"></div>
+
+    <section id="page1" class="active">
+        <p class="subtitle" id="live-date">✨ LOADING DATE... ✨</p>
+        <h1 class="title">Her Spesial Day<br><span>is Coming</span></h1>
+        
+        <div class="countdown-container">
+            <div class="time-box"><span id="hours">00</span><p>Hours</p></div>
+            <div class="time-box"><span id="mins">00</span><p>Minutes</p></div>
+            <div class="time-box"><span id="secs">00</span><p>Seconds</p></div>
+        </div>
+        
+        <button id="btn1" onclick="nextPage('page1', 'page2')" class="btn"> ✨ TUNGGU SAMPAI WAKTUNYA ✨</button>
+    </section>
+
+    <section id="page2">
+        <p class="subtitle">Surprise For Him</p>
+        <div class="gift-wrapper" id="giftBtn" onclick="triggerLoveBurst(event)">
+            <div class="gift-icon"><i class="fa-solid fa-gift"></i></div>
+        </div>
+        <h1 class="title">A Special Box For <br><span>The Best One</span></h1>
+        <p class="desc">Klik kado di atas beberapa kali untuk melihat kilauan efeknya, lalu buka hadiahmu Bro! 🤜🤛</p>
+        <button onclick="nextPage('page2', 'page3')" class="btn">🎁 Open Box</button>
+    </section>
+
+    <section id="page3">
+        <p class="subtitle">✦ A LETTER JUST FOR YOU ✦</p>
+        
+        <div class="polaroid-bg-scenery">
+            <div class="mini-polaroid p1"><img src="assets/foto1.jpeg"></div>
+            <div class="mini-polaroid p2"><img src="assets/foto2.jpeg"></div>
+            <div class="mini-polaroid p3"><img src="assets/foto3.jpeg"></div>
+            <div class="mini-polaroid p4"><img src="assets/foto4.jpeg"></div>
+            <div class="mini-polaroid p5"><img src="assets/poto5.jpeg"></div>
+        </div>
+
+        <h1 class="title" style="font-size: 2.5rem; margin-bottom: 5px;">Your<br><span>Special Day</span></h1>
+        <p class="desc" style="margin-bottom: 15px; font-size: 11px; color: #64748b; text-transform: uppercase;">Exclusively made for you</p>
+        <button onclick="nextPage('page3', 'page4')" class="btn">✦ NEXT PAGE ✦</button>
+    </section>
+
+    <section id="page4">
+        <div class="polaroid-layout">
+            <div class="polaroid" style="transform: rotate(-3deg);"><img src="assets/foto.jpeg"></div>
+            <div class="center-text">
+                <p class="subtitle">Something from my mind</p>
+                <h1 class="title">Spesial Untuk<br><span>Cowok Hebatku</span></h1>
+                <button onclick="nextPage('page4', 'page5')" class="btn">✦ READ MY LETTER ✦</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="page5">
+        <h1 class="title" style="font-size: 1.8rem;">Happy Birthday <span>ndutttku!</span></h1>
+        <div class="letter-box">
+            <p>Selamat Ulang Tahun, Sayangkuuu Cintaakuu Gantengkuuu Duniakuu Semestakuuu! 🎂👑</p>
+            <p>Akhirnya hari yang kamu tunggu-tunggu datang juga! Dihari yang spesial ini, aku cuma mau bilang terima kasih karena kamu sudah lahir ke dunia dan menjadi bagian paling indah dalam hidupku. Terima kasih sudah selalu jadi tempat bersandar, pendengar yang baik, selalu sabar menghadapi sikap aku, dan alasan aku tersenyum setiap hari.</p>
+            <p>Semoga di usiamu yang baru ini, semua impian dan cita-cita yang sering kamu ceritakan ke aku bisa terwujud satu per satu. Di lembaran barumu ini, aku berdoa agar kamu selalu dikelilingi oleh kebahagiaan, kedamaian, dan keberuntungan yang tak henti. </p>
+            <p>Semoga semesta selalu menjaga senyummu, karena senyum itu adalah duniaku. Tetaplah jadi pria hebat yang rendah hati, penyayang dan selalu sabar seperti yang aku kenal. Aku akan selalu ada di sini untuk mendukung setiap langkahmu. </p>
+            <p>I love you today, tomorrow, and endlessly. ❤️</p>
+        </div>
+        <br>
+        <button onclick="nextPage('page5', 'page6')" class="btn">Our Stories 📸</button>
+    </section>
+
+    <section id="page6">
+        <h1 class="title">Our <span>Memories</span></h1>
+        <div class="grid-memories">
+            <div class="polaroid"><img src="assets/foto1..jpeg"></div>
+            <div class="polaroid"><img src="assets/foto2..jpeg"></div>
+            <div class="polaroid"><img src="assets/poto3..jpeg"></div>
+            <div class="polaroid"><img src="assets/foto4..jpeg"></div>
+            <div class="polaroid"><img src="assets/foto5..jpeg"></div>
+            <div class="polaroid"><img src="assets/poto6..jpeg"></div>
+            <div class="polaroid"><img src="assets/foto7..jpeg"></div>
+            <div class="polaroid"><img src="assets/poto8..jpeg"></div>
+        </div>
+        <button onclick="nextPage('page6', 'page7')" class="btn">Watch Video 🎬</button>
+    </section>
+
+    <section id="page7">
+        <h1 class="title">Just <span>For You</span></h1>
+        <div class="video-card">
+            <video id="vlog" controls playsinline>
+                <source src="assets/video.mp4" type="video/mp4">
+            </video>
+        </div>
+        <button onclick="nextPage('page7', 'page8')" class="btn">Next Step ✨</button>
+    </section>
+
+    <section id="page8">
+        <h1 class="title">Happy <span>Level Up!</span></h1>
+        <p class="desc">Terima kasih telah berjuang dan menjadi bagian terbaik dihidupku.</p>
+        <p style="font-family: 'Cinzel'; font-size: 22px; color: #f50b2a;">i hope this little gift can make your special day every move beatifull </p>
+        <br>
+        <!-- Tambahkan tombol ini di dalam index.html kamu -->
+<a href="photobooth.html" class="btn" style="text-decoration: none; display: inline-block; font-size: 14px; padding: 10px 20px; margin-bottom: 10px;">📸 Buka Photobooth</a>    
+
+    <script>
+        const musik = document.getElementById("bg-music");
+        const musikIcon = document.getElementById("music-icon");
+
+        // --- SISTEM PEMICU MASUK DAN MUSIK (PENTING BAGI BROWSER MOBILE/DESKTOP) ---
+        function startApp() {
+            // Putar musik secara paksa setelah user berinteraksi dengan tombol pertama
+            musik.play().then(() => {
+                musikIcon.className = "fa-solid fa-volume-high"; // Ubah ikon ke mode speaker aktif
+            }).catch(err => console.log("Izin audio otomatis tertahan browser"));
+            
+            // Pindah ke Halaman 2
+            nextPage('page1', 'page2');
+        }
+
+        // --- ON/OFF AUDIO MANUAL LEWAT ICON JIKA MAU MATIKAN ---
+        function toggleMusic() {
+            if (musik.paused) {
+                musik.play();
+                musikIcon.className = "fa-solid fa-volume-high";
+            } else {
+                musik.pause();
+                musikIcon.className = "fa-solid fa-volume-xmark";
+            }
+        }
+
+        // --- LOGIKA JAM REALTIME MENGIKUTI LAPTOP/HP SECARA PAS ---
+        function updateRealtimeClock() {
+            const sekarang = new Date();
+            
+            let jam = sekarang.getHours();
+            let menit = sekarang.getMinutes();
+            let detik = sekarang.getSeconds();
+            
+            // Format angka agar selalu dua digit (misal: 09, 05)
+            jam = jam < 10 ? "0" + jam : jam;
+            menit = menit < 10 ? "0" + menit : menit;
+            detik = detik < 10 ? "0" + detik : detik;
+            
+            // Masukkan ke dalam HTML box jam digital
+            document.getElementById("hours").innerHTML = jam;
+            document.getElementById("mins").innerHTML = menit;
+            document.getElementById("secs").innerHTML = detik;
+            
+            // Update teks tanggal di bagian atas agar sesuai kalender perangkat
+            const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const tanggalString = sekarang.toLocaleDateString('id-ID', opsiTanggal);
+            document.getElementById("live-date").innerHTML = `⚡ ${tanggalString} ⚡`;
+        }
+        
+        // Jalankan fungsi jam pertama kali, lalu refresh otomatis setiap 1 detik (1000 milidetik)
+        updateRealtimeClock();
+        setInterval(updateRealtimeClock, 1000);
+
+        // --- NAVIGASI HALAMAN ---
+        function nextPage(currentId, nextId) {
+            const current = document.getElementById(currentId);
+            const next = document.getElementById(nextId);
+            current.style.opacity = "0"; current.style.transform = "scale(0.95)"; current.style.transition = "0.4s ease";
+            setTimeout(() => {
+                current.classList.remove('active');
+                next.classList.add('active');
+                if(nextId === 'page7') {
+                    document.getElementById('vlog').play().catch(e => console.log("Autoplay Engine Sync"));
+                }
+            }, 350);
+        }
+
+        // --- EFEK PARTIKEL NEBULA GLOW ---
+        const pContainer = document.getElementById('particle-container');
+        function createParticle(symbol, baseSpeed) {
+            const part = document.createElement('div');
+            part.classList.add('particle'); part.innerHTML = symbol;
+            part.style.left = Math.random() * 95 + 'vw';
+            part.style.fontSize = (Math.random() * 6 + 10) + 'px';
+            part.style.setProperty('--random-x', (Math.random() * 30 - 15) + 'vw');
+            const duration = Math.random() * 4 + baseSpeed;
+            part.style.animation = `floatingUp ${duration}s linear forwards`;
+            pContainer.appendChild(part);
+            setTimeout(() => { part.remove(); }, duration * 1000);
+        }
+        setInterval(() => { createParticle('✨', 4); }, 400); 
+        setInterval(() => { createParticle('🔹', 6); }, 800); 
+        setInterval(() => { createParticle('💎', 7); }, 1200); 
+
+        // --- EFEK SEMBURAN KILATAN SAAT KLIK KADO ---
+        function triggerLoveBurst(e) {
+            const wrapper = document.getElementById('giftBtn');
+            const rect = wrapper.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 15; i++) {
+                const love = document.createElement('div');
+                love.classList.add('burst-love');
+                love.innerHTML = Math.random() > 0.5 ? '✨' : '⚡';
+                love.style.left = `${centerX}px`;
+                love.style.top = `${centerY}px`;
+
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 80 + 40;
+                const tx = Math.cos(angle) * distance + 'px';
+                const ty = Math.sin(angle) * distance + 'px';
+
+                love.style.setProperty('--tx', tx);
+                love.style.setProperty('--ty', ty);
+                document.body.appendChild(love);
+                
+                setTimeout(() => { love.remove(); }, 800);
+            }
+        }
+
+    </script>
+</body>
+</html>
