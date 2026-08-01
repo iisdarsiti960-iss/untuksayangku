@@ -104,7 +104,6 @@
             z-index: 2;
         }
 
-        /* TAMPILAN PRATINJAU KAMERA KETIKA HENDAK FOTO */
         .live-grid {
             position: absolute;
             top: 0;
@@ -132,7 +131,7 @@
             width: 100%;
             height: 100%;
             border-radius: 0px;
-            background-color: #000;
+            background-color: #000000;
             display: block;
         }
 
@@ -218,19 +217,16 @@
     let isRunning = false;
     let audioCtx = null;
 
-    // ANGKA KOORDINAT DENGAN TOLERANSI (LEBIH BESAR SEDIKIT BIAR MENUTUPI SEMUA AREA HITAM TANPA BOLA MERAH)
+    // POSISI KOTAK TEPAT DI FRAME
     const boxPositions = [
-        // Baris 1 (Atas)
-        { x: 0.050, y: 0.054, w: 0.410, h: 0.226 },
-        { x: 0.540, y: 0.054, w: 0.410, h: 0.226 },
+        { x: 0.052, y: 0.056, w: 0.405, h: 0.222 },
+        { x: 0.543, y: 0.056, w: 0.405, h: 0.222 },
 
-        // Baris 2 (Tengah)
-        { x: 0.050, y: 0.295, w: 0.410, h: 0.226 },
-        { x: 0.540, y: 0.295, w: 0.410, h: 0.226 },
+        { x: 0.052, y: 0.298, w: 0.405, h: 0.222 },
+        { x: 0.543, y: 0.298, w: 0.405, h: 0.222 },
 
-        // Baris 3 (Bawah)
-        { x: 0.050, y: 0.536, w: 0.410, h: 0.226 },
-        { x: 0.540, y: 0.536, w: 0.410, h: 0.226 }
+        { x: 0.052, y: 0.539, w: 0.405, h: 0.222 },
+        { x: 0.543, y: 0.539, w: 0.405, h: 0.222 }
     ];
 
     function playCameraSound() {
@@ -292,23 +288,29 @@
                 const cW = canvas.width;
                 const cH = canvas.height;
 
+                gCtx.fillStyle = "#000000";
+                gCtx.fillRect(0, 0, cW, cH);
+
                 const videoAspect = vW / vH;
                 const canvasAspect = cW / cH;
 
-                let sX = 0, sY = 0, sW = vW, sH = vH;
+                let drawW = cW;
+                let drawH = cH;
+                let drawX = 0;
+                let drawY = 0;
 
                 if (videoAspect > canvasAspect) {
-                    sW = vH * canvasAspect;
-                    sX = (vW - sW) / 2;
+                    drawH = cW / videoAspect;
+                    drawY = (cH - drawH) / 2;
                 } else {
-                    sH = vW / canvasAspect;
-                    sY = (vH - sH) / 2;
+                    drawW = cH * videoAspect;
+                    drawX = (cW - drawW) / 2;
                 }
 
                 gCtx.save();
                 gCtx.translate(cW, 0);
                 gCtx.scale(-1, 1);
-                gCtx.drawImage(video, sX, sY, sW, sH, 0, 0, cW, cH);
+                gCtx.drawImage(video, 0, 0, vW, vH, cW - drawX - drawW, drawY, drawW, drawH);
                 gCtx.restore();
             });
         }
@@ -385,7 +387,6 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        // 1. Gambar Foto dulu (dibuat agak besar sedikit memotong ke belakang bingkai)
         capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
@@ -393,26 +394,34 @@
             const destW = pos.w * width;
             const destH = pos.h * height;
 
+            // 1. ISILAH KOTAK DENGAN HITAM PEKAT
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(destX, destY, destW, destH);
+
+            // 2. TEMPEL FOTO SECARA UTUH (TANPA NGEZOOM & TANPA GEPENG)
             const imgW = photoCanvas.width;
             const imgH = photoCanvas.height;
 
             const imgAspect = imgW / imgH;
             const destAspect = destW / destH;
 
-            let srcX = 0, srcY = 0, srcW = imgW, srcH = imgH;
+            let drawW = destW;
+            let drawH = destH;
+            let drawX = destX;
+            let drawY = destY;
 
             if (imgAspect > destAspect) {
-                srcW = imgH * destAspect;
-                srcX = (imgW - srcW) / 2;
+                drawH = destW / imgAspect;
+                drawY = destY + (destH - drawH) / 2;
             } else {
-                srcH = imgW / destAspect;
-                srcY = (imgH - srcH) / 2;
+                drawW = destH * imgAspect;
+                drawX = destX + (destW - drawW) / 2;
             }
 
-            ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+            ctx.drawImage(photoCanvas, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
         });
 
-        // 2. Timpa Bingkai Frame di atasnya agar pinggiran lebihan foto tertutup rapi
+        // 3. TIMPA BINGKAI DI ATASNYA
         ctx.drawImage(frameOverlay, 0, 0, width, height);
 
         document.getElementById('live-grid').style.display = 'none';
