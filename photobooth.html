@@ -64,12 +64,11 @@
             width: 100%;
             max-width: 360px;
             margin: 0 auto 18px auto;
-            /* Mencegah kotak hitam memanjang ke bawah berlebihan */
             height: 0;
-            padding-bottom: 150%; /* Mengunci rasio 2:3 yang pas dengan gambar frame */
+            padding-bottom: 150%; 
             border-radius: 12px;
             overflow: hidden;
-            background-color: #1a1a1a;
+            background-color: transparent;
             z-index: 1;
         }
 
@@ -102,8 +101,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* Paksa frame memenuhi seluruh kotak tanpa kepotong/menciut */
-            object-fit: fill !important; 
+            object-fit: fill !important;
             pointer-events: none;
             z-index: 2;
         }
@@ -120,14 +118,13 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
             
-            /* Koordinat Presisi Kotak Foto Kamu */
-            padding-top: 5.8%;
-            padding-bottom: 31.5%;
-            padding-left: 5.3%;
-            padding-right: 5.3%;
-        
-            row-gap: 2.2%;
-            column-gap: 8.8%;
+            padding-top: 11.0%;
+            padding-bottom: 23.0%;
+            padding-left: 10.0%;
+            padding-right: 10.0%;
+
+            row-gap: 2.0%;
+            column-gap: 3.0%;
             
             box-sizing: border-box;
             pointer-events: none;
@@ -141,7 +138,6 @@
             display: block;
         }
 
-        /* Tampilan Tombol yang Super Responsif di HP */
         .btn-action {
             font-family: 'Poppins', sans-serif;
             background-color: #f1d592;
@@ -202,7 +198,6 @@
             <img src="frame.png" id="frame-overlay" class="frame-img" alt="Frame">
         </div>
 
-        <!-- Tombol dibuat Mandiri & Paling Depan -->
         <a id="snap-btn" class="btn-action">📸 Mulai Sesi (6 Foto)</a>
         <a id="download-btn" class="btn-action" style="display: none;">⬇️ Download Hasil Foto</a>
         <a id="reset-btn" class="btn-action btn-secondary" style="display: none;">🔄 Foto Ulang</a>
@@ -224,20 +219,59 @@
     const totalPhotos = 6;
     let isRunning = false;
 
-const boxPositions = [
-    // --- BARIS 1 (ATAS) ---
-    { x: 0.053, y: 0.058, w: 0.403, h: 0.228 }, // Kiri Atas
-    { x: 0.544, y: 0.058, w: 0.403, h: 0.228 }, // Kanan Atas
+    // FOTO DIBIKIN MEKAR SEDIKIT SUPAYA MASUK KE BELAKANG BINGKAI TANPA CELAH HITAM
+    const boxPositions = [
+        // BARIS 1
+        { x: 0.100, y: 0.095, w: 0.395, h: 0.220 },
+        { x: 0.505, y: 0.095, w: 0.395, h: 0.220 },
 
-    // --- BARIS 2 (TENGAH) ---
-    { x: 0.053, y: 0.308, w: 0.403, h: 0.228 }, // Kiri Tengah
-    { x: 0.544, y: 0.308, w: 0.403, h: 0.228 }, // Kanan Tengah
+        // BARIS 2
+        { x: 0.100, y: 0.315, w: 0.395, h: 0.220 },
+        { x: 0.505, y: 0.315, w: 0.395, h: 0.220 },
 
-    // --- BARIS 3 (BAWAH) ---
-    { x: 0.053, y: 0.558, w: 0.403, h: 0.228 }, // Kiri Bawah
-    { x: 0.544, y: 0.558, w: 0.403, h: 0.228 }  // Kanan Bawah
-];
-        
+        // BARIS 3
+        { x: 0.100, y: 0.535, w: 0.395, h: 0.220 },
+        { x: 0.505, y: 0.535, w: 0.395, h: 0.220 }
+    ];
+
+    // EFEK SUARA CEKREK
+    function playCameraSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.08);
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.08);
+
+            setTimeout(() => {
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc2.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+
+                gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.start();
+                osc2.stop(audioCtx.currentTime + 0.05);
+            }, 60);
+        } catch(e) {
+            console.log("Audio Error", e);
+        }
+    }
+
     function drawLiveGrid() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             gridCanvases.forEach(canvas => {
@@ -293,7 +327,6 @@ const boxPositions = [
         alert("Akses kamera gagal: " + err); 
     });
 
-    // Fungsi trigger sesi foto universal
     function startSession(e) {
         if(e) e.preventDefault();
         if (isRunning) return;
@@ -304,7 +337,6 @@ const boxPositions = [
         runPhotoLoop();
     }
 
-    // Pemasangan Event Listener Khusus Layar HP
     snapBtn.onclick = startSession;
 
     async function runPhotoLoop() {
@@ -315,6 +347,7 @@ const boxPositions = [
             }
 
             statusText.innerText = `📸 *CEKREK!* (Foto ${i})`;
+            playCameraSound(); // PANGGIL SUARA CEKREK
             
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = video.videoWidth || 600;
@@ -344,6 +377,7 @@ const boxPositions = [
 
         ctx.clearRect(0, 0, width, height);
 
+        // 1. Gambar semua foto dulu di lapisan paling bawah
         capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
@@ -370,6 +404,7 @@ const boxPositions = [
             ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
 
+        // 2. Timpa dengan gambar frame.png transparan di atasnya!
         ctx.drawImage(frameOverlay, 0, 0, width, height);
 
         document.getElementById('live-grid').style.display = 'none';
