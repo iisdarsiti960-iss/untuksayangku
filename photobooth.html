@@ -67,7 +67,7 @@
             padding-bottom: 150%; 
             border-radius: 12px;
             overflow: hidden;
-            background-color: transparent;
+            background-color: #000;
             z-index: 1;
         }
 
@@ -104,7 +104,7 @@
             z-index: 2;
         }
 
-        /* DUA KOLOM DENGAN TAMPILAN KAMERA SESUAI UKURAN BINGKAI HITAM */
+        /* TAMPILAN PRATINJAU KAMERA KETIKA HENDAK FOTO */
         .live-grid {
             position: absolute;
             top: 0;
@@ -116,13 +116,13 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
             
-            padding-top: 5.8%;
-            padding-bottom: 335%;
-            padding-left: 5.25%;
-            padding-right: 5.25%;
+            padding-top: 5.6%;
+            padding-bottom: 23.9%;
+            padding-left: 5.2%;
+            padding-right: 5.2%;
 
-            row-gap: 2.8%;
-            column-gap: 9.0%;
+            row-gap: 2.0%;
+            column-gap: 8.6%;
             
             box-sizing: border-box;
             pointer-events: none;
@@ -218,19 +218,19 @@
     let isRunning = false;
     let audioCtx = null;
 
-    // MATRIKS PIKSEL PRESISI SESUAI BINGKAI HITAM
+    // ANGKA KOORDINAT DENGAN TOLERANSI (LEBIH BESAR SEDIKIT BIAR MENUTUPI SEMUA AREA HITAM TANPA BOLA MERAH)
     const boxPositions = [
         // Baris 1 (Atas)
-        { x: 0.0525, y: 0.0575, w: 0.4025, h: 0.218 },
-        { x: 0.5450, y: 0.0575, w: 0.4025, h: 0.218 },
+        { x: 0.050, y: 0.054, w: 0.410, h: 0.226 },
+        { x: 0.540, y: 0.054, w: 0.410, h: 0.226 },
 
         // Baris 2 (Tengah)
-        { x: 0.0525, y: 0.3035, w: 0.4025, h: 0.218 },
-        { x: 0.5450, y: 0.3035, w: 0.4025, h: 0.218 },
+        { x: 0.050, y: 0.295, w: 0.410, h: 0.226 },
+        { x: 0.540, y: 0.295, w: 0.410, h: 0.226 },
 
         // Baris 3 (Bawah)
-        { x: 0.0525, y: 0.5495, w: 0.4025, h: 0.218 },
-        { x: 0.5450, y: 0.5495, w: 0.4025, h: 0.218 }
+        { x: 0.050, y: 0.536, w: 0.410, h: 0.226 },
+        { x: 0.540, y: 0.536, w: 0.410, h: 0.226 }
     ];
 
     function playCameraSound() {
@@ -287,14 +287,28 @@
                     canvas.height = rect.height;
                 }
 
+                const vW = video.videoWidth;
+                const vH = video.videoHeight;
                 const cW = canvas.width;
                 const cH = canvas.height;
+
+                const videoAspect = vW / vH;
+                const canvasAspect = cW / cH;
+
+                let sX = 0, sY = 0, sW = vW, sH = vH;
+
+                if (videoAspect > canvasAspect) {
+                    sW = vH * canvasAspect;
+                    sX = (vW - sW) / 2;
+                } else {
+                    sH = vW / canvasAspect;
+                    sY = (vH - sH) / 2;
+                }
 
                 gCtx.save();
                 gCtx.translate(cW, 0);
                 gCtx.scale(-1, 1);
-                // MENGGUNAAN FIT STRETCH AGAR KAMERA SESUAI BENTUK KOTAK DAN TIDAK DIPOTONG/ZOOM
-                gCtx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, cW, cH);
+                gCtx.drawImage(video, sX, sY, sW, sH, 0, 0, cW, cH);
                 gCtx.restore();
             });
         }
@@ -371,7 +385,7 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        // 1. Gambar Foto Pas Di Ukuran Kotak Hitam (Tanpa Di-crop / Tanpa Zoom)
+        // 1. Gambar Foto dulu (dibuat agak besar sedikit memotong ke belakang bingkai)
         capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
@@ -379,10 +393,26 @@
             const destW = pos.w * width;
             const destH = pos.h * height;
 
-            ctx.drawImage(photoCanvas, 0, 0, photoCanvas.width, photoCanvas.height, destX, destY, destW, destH);
+            const imgW = photoCanvas.width;
+            const imgH = photoCanvas.height;
+
+            const imgAspect = imgW / imgH;
+            const destAspect = destW / destH;
+
+            let srcX = 0, srcY = 0, srcW = imgW, srcH = imgH;
+
+            if (imgAspect > destAspect) {
+                srcW = imgH * destAspect;
+                srcX = (imgW - srcW) / 2;
+            } else {
+                srcH = imgW / destAspect;
+                srcY = (imgH - srcH) / 2;
+            }
+
+            ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
 
-        // 2. Timpa Bingkai Frame di atasnya
+        // 2. Timpa Bingkai Frame di atasnya agar pinggiran lebihan foto tertutup rapi
         ctx.drawImage(frameOverlay, 0, 0, width, height);
 
         document.getElementById('live-grid').style.display = 'none';
