@@ -104,7 +104,7 @@
             z-index: 2;
         }
 
-        /* TAMPILAN KAMERA SESUAI UKURAN KOTAK HITAM */
+        /* DUA KOLOM DENGAN TAMPILAN KAMERA SESUAI UKURAN BINGKAI HITAM */
         .live-grid {
             position: absolute;
             top: 0;
@@ -218,7 +218,7 @@
     let isRunning = false;
     let audioCtx = null;
 
-    // ANGKA PRESISI TEPAT UKURAN BINGKAI HITAM KETIKA DIPERIKSA DENGAN SKALA PIKSEL GAMBARMU
+    // MATRIKS PIKSEL PRESISI SESUAI BINGKAI HITAM
     const boxPositions = [
         // Baris 1 (Atas)
         { x: 0.0525, y: 0.0575, w: 0.4025, h: 0.218 },
@@ -287,28 +287,14 @@
                     canvas.height = rect.height;
                 }
 
-                const vW = video.videoWidth;
-                const vH = video.videoHeight;
                 const cW = canvas.width;
                 const cH = canvas.height;
-
-                const videoAspect = vW / vH;
-                const canvasAspect = cW / cH;
-
-                let sX = 0, sY = 0, sW = vW, sH = vH;
-
-                if (videoAspect > canvasAspect) {
-                    sW = vH * canvasAspect;
-                    sX = (vW - sW) / 2;
-                } else {
-                    sH = vW / canvasAspect;
-                    sY = (vH - sH) / 2;
-                }
 
                 gCtx.save();
                 gCtx.translate(cW, 0);
                 gCtx.scale(-1, 1);
-                gCtx.drawImage(video, sX, sY, sW, sH, 0, 0, cW, cH);
+                // MENGGUNAAN FIT STRETCH AGAR KAMERA SESUAI BENTUK KOTAK DAN TIDAK DIPOTONG/ZOOM
+                gCtx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, cW, cH);
                 gCtx.restore();
             });
         }
@@ -385,7 +371,7 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        // 1. Gambar Foto dulu
+        // 1. Gambar Foto Pas Di Ukuran Kotak Hitam (Tanpa Di-crop / Tanpa Zoom)
         capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
@@ -393,23 +379,7 @@
             const destW = pos.w * width;
             const destH = pos.h * height;
 
-            const imgW = photoCanvas.width;
-            const imgH = photoCanvas.height;
-
-            const imgAspect = imgW / imgH;
-            const destAspect = destW / destH;
-
-            let srcX = 0, srcY = 0, srcW = imgW, srcH = imgH;
-
-            if (imgAspect > destAspect) {
-                srcW = imgH * destAspect;
-                srcX = (imgW - srcW) / 2;
-            } else {
-                srcH = imgW / destAspect;
-                srcY = (imgH - srcH) / 2;
-            }
-
-            ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+            ctx.drawImage(photoCanvas, 0, 0, photoCanvas.width, photoCanvas.height, destX, destY, destW, destH);
         });
 
         // 2. Timpa Bingkai Frame di atasnya
