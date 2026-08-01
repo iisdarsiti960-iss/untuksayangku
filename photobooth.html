@@ -35,6 +35,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             text-align: center;
+            position: relative;
         }
 
         h2 {
@@ -46,7 +47,6 @@
             margin-bottom: 6px; 
         }
 
-        /* Status Hitung Mundur / Indikator Foto */
         .status-text {
             font-family: 'Poppins', sans-serif;
             font-size: 0.85rem;
@@ -70,6 +70,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 1; /* Pastikan tidak menutupi tombol */
         }
 
         #webcam {
@@ -81,7 +82,6 @@
             object-fit: cover;
             transform: scaleX(-1);
             z-index: 1;
-            filter: contrast(105%);
         }
 
         #preview-canvas {
@@ -90,7 +90,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: fill; /* Kunci agar pas dengan wrapper */
             z-index: 3;
             display: none;
         }
@@ -102,12 +102,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; 
+            object-fit: fill; /* Diubah ke fill agar menutup penuh sempurna */
             pointer-events: none;
             z-index: 2;
         }
 
-        /* Container Grid 6 Kotak (Disesuaikan dengan Frame Kamu) */
+        /* Container Grid 6 Kotak (Sesuai Ukuran Frame) */
         .live-grid {
             position: absolute;
             top: 0;
@@ -120,7 +120,7 @@
             grid-template-rows: 1fr 1fr 1fr;
             
             padding-top: 5.8%;
-            padding-bottom: 31.5%;
+            padding-bottom: 21.2%;
             padding-left: 5.3%;
             padding-right: 5.3%;
 
@@ -139,11 +139,13 @@
             display: block;
         }
 
-        /* Tombol Navigasi & Aksi */
+        /* Container Tombol & Paksa Paling Depan */
         .btn-group {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            position: relative;
+            z-index: 999; /* Sangat depan agar pasti bisa diklik */
         }
 
         button, .btn-download, .btn-back {
@@ -162,7 +164,8 @@
             text-align: center;
             transition: all 0.3s ease;
             position: relative;
-            z-index: 10;
+            z-index: 1000; /* BISA DIKLIK PASTI */
+            touch-action: manipulation;
         }
 
         button:active, .btn-download:active {
@@ -190,10 +193,8 @@
         <div id="status" class="status-text">Siap untuk 6 foto!</div>
 
         <div class="booth-wrapper">
-            <!-- Video kamera disembunyikan (digunakan sebagai data stream) -->
             <video id="webcam" autoplay playsinline muted style="display: none;"></video>
     
-            <!-- Container 6 Grid untuk Live Preview -->
             <div id="live-grid" class="live-grid">
                 <canvas class="grid-box"></canvas>
                 <canvas class="grid-box"></canvas>
@@ -203,17 +204,14 @@
                 <canvas class="grid-box"></canvas>
             </div>
 
-            <!-- Canvas Hasil Foto Akhir -->
             <canvas id="preview-canvas" style="display: none;"></canvas>
-            
-            <!-- Frame Transparan PNG -->
             <img src="frame.png" id="frame-overlay" class="frame-img" alt="Frame">
         </div>
 
         <div class="btn-group">
-            <button id="snap-btn">📸 Mulai Sesi (6 Foto)</button>
+            <button id="snap-btn" type="button">📸 Mulai Sesi (6 Foto)</button>
             <a id="download-btn" class="btn-download" style="display: none;">⬇️ Download Hasil Foto</a>
-            <button id="reset-btn" class="btn-secondary" style="display: none;">🔄 Foto Ulang</button>
+            <button id="reset-btn" class="btn-secondary" style="display: none;" type="button">🔄 Foto Ulang</button>
             <a href="index.html" class="btn-back">⬅️ Kembali</a>
         </div>
     </div>
@@ -232,17 +230,15 @@
     let capturedPhotos = [];
     const totalPhotos = 6;
 
-    // Koordinat Presisi Menyesuaikan Gambar Frame
     const boxPositions = [
-        { x: 0.053, y: 0.058, w: 0.403, h: 0.228 }, // Kiri Atas
-        { x: 0.544, y: 0.058, w: 0.403, h: 0.228 }, // Kanan Atas
-        { x: 0.053, y: 0.308, w: 0.403, h: 0.228 }, // Kiri Tengah
-        { x: 0.544, y: 0.308, w: 0.403, h: 0.228 }, // Kanan Tengah
-        { x: 0.053, y: 0.558, w: 0.403, h: 0.228 }, // Kiri Bawah
-        { x: 0.544, y: 0.558, w: 0.403, h: 0.228 }  // Kanan Bawah
+        { x: 0.053, y: 0.058, w: 0.403, h: 0.228 },
+        { x: 0.544, y: 0.058, w: 0.403, h: 0.228 },
+        { x: 0.053, y: 0.308, w: 0.403, h: 0.228 },
+        { x: 0.544, y: 0.308, w: 0.403, h: 0.228 },
+        { x: 0.053, y: 0.558, w: 0.403, h: 0.228 },
+        { x: 0.544, y: 0.558, w: 0.403, h: 0.228 }
     ];
 
-    // Fungsi menggambar stream kamera ke 6 kotak live grid
     function drawLiveGrid() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             gridCanvases.forEach(canvas => {
@@ -286,32 +282,30 @@
         drawLiveGrid();
     });
 
-    // Akses Kamera
-    // KODE BARU (RAMAH UNTUK HP / MOBILE):
-const constraints = {
-    audio: false,
-    video: {
-        facingMode: "user", // Menggunakan kamera depan
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-    }
-};
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+    })
+    .then((stream) => { 
+        video.srcObject = stream; 
+        video.play().catch(e => console.log(e));
+    })
+    .catch((err) => { 
+        alert("Akses kamera gagal: " + err); 
+    });
 
-navigator.mediaDevices.getUserMedia(constraints)
-.then((stream) => { 
-    video.srcObject = stream; 
-    // Tambahkan play() manual agar HP tidak freeze
-    video.play().catch(e => console.log("Autoplay blocked:", e));
-})
-.catch((err) => { 
-    console.error("Gagal akses kamera: ", err);
-    alert("Gagal mengakses kamera. Pastikan memberikan izin kamera di browser HP kamu!"); 
-});s
-    // Sesi Ambil Foto
-    snapBtn.addEventListener('click', async () => {
+    // Jalankan sesi foto (Mendukung Klik & Sentuhan Layar HP)
+    function startSession(e) {
+        if(e) e.preventDefault();
         snapBtn.style.display = 'none';
         capturedPhotos = [];
+        runPhotoLoop();
+    }
 
+    snapBtn.addEventListener('click', startSession);
+    snapBtn.addEventListener('touchstart', startSession);
+
+    async function runPhotoLoop() {
         for (let i = 1; i <= totalPhotos; i++) {
             for (let countdown = 3; countdown > 0; countdown--) {
                 statusText.innerText = `Foto ke-${i} dalam ${countdown}...`;
@@ -337,9 +331,8 @@ navigator.mediaDevices.getUserMedia(constraints)
 
         statusText.innerText = "Selesai! Menyusun foto...";
         renderFinalFrame();
-    });
+    }
 
-    // Render Hasil Akhir ke Canvas
     function renderFinalFrame() {
         const width = frameOverlay.naturalWidth || 1200;
         const height = frameOverlay.naturalHeight || 1800;
@@ -375,10 +368,8 @@ navigator.mediaDevices.getUserMedia(constraints)
             ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
 
-        // Tempelkan Frame PNG
         ctx.drawImage(frameOverlay, 0, 0, width, height);
 
-        // Tampilkan Preview
         document.getElementById('live-grid').style.display = 'none';
         previewCanvas.style.display = 'block';
 
@@ -399,7 +390,6 @@ navigator.mediaDevices.getUserMedia(constraints)
         }
     }
 
-    // Reset Foto Ulang
     resetBtn.addEventListener('click', () => {
         previewCanvas.style.display = 'none';
         document.getElementById('live-grid').style.display = 'grid';
