@@ -217,7 +217,7 @@
     let isRunning = false;
     let audioCtx = null;
 
-    // POSISI KOTAK TEPAT DI FRAME
+    // Posisi relatif 6 kotak dalam frame
     const boxPositions = [
         { x: 0.052, y: 0.056, w: 0.405, h: 0.222 },
         { x: 0.543, y: 0.056, w: 0.405, h: 0.222 },
@@ -272,6 +272,7 @@
         }
     }
 
+    // MENGGAMBAR KAMERA TANPA NGE-ZOOM ATAU CROP
     function drawLiveGrid() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             gridCanvases.forEach(canvas => {
@@ -288,25 +289,29 @@
                 const cW = canvas.width;
                 const cH = canvas.height;
 
+                // 1. Warna dasar hitam pekat
                 gCtx.fillStyle = "#000000";
                 gCtx.fillRect(0, 0, cW, cH);
 
-                const videoAspect = vW / vH;
-                const canvasAspect = cW / cH;
+                // 2. Hitung skala gambar proporsional (fit)
+                const vAspect = vW / vH;
+                const cAspect = cW / cH;
 
-                let drawW = cW;
-                let drawH = cH;
-                let drawX = 0;
-                let drawY = 0;
+                let drawW, drawH, drawX, drawY;
 
-                if (videoAspect > canvasAspect) {
-                    drawH = cW / videoAspect;
+                if (vAspect > cAspect) {
+                    drawW = cW;
+                    drawH = cW / vAspect;
+                    drawX = 0;
                     drawY = (cH - drawH) / 2;
                 } else {
-                    drawW = cH * videoAspect;
+                    drawH = cH;
+                    drawW = cH * vAspect;
                     drawX = (cW - drawW) / 2;
+                    drawY = 0;
                 }
 
+                // 3. Gambar kamera mirror tanpa di-zoom
                 gCtx.save();
                 gCtx.translate(cW, 0);
                 gCtx.scale(-1, 1);
@@ -322,7 +327,7 @@
     });
 
     navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: "user" },
         audio: false
     })
     .then((stream) => { 
@@ -360,8 +365,8 @@
             playCameraSound();
             
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = video.videoWidth || 600;
-            tempCanvas.height = video.videoHeight || 800;
+            tempCanvas.width = video.videoWidth || 720;
+            tempCanvas.height = video.videoHeight || 1280;
             const tempCtx = tempCanvas.getContext('2d');
             
             tempCtx.save();
@@ -394,34 +399,34 @@
             const destW = pos.w * width;
             const destH = pos.h * height;
 
-            // 1. ISILAH KOTAK DENGAN HITAM PEKAT
+            // Black background per box
             ctx.fillStyle = '#000000';
             ctx.fillRect(destX, destY, destW, destH);
 
-            // 2. TEMPEL FOTO SECARA UTUH (TANPA NGEZOOM & TANPA GEPENG)
+            // Fit photo inside box without zoom/stretch
             const imgW = photoCanvas.width;
             const imgH = photoCanvas.height;
-
             const imgAspect = imgW / imgH;
             const destAspect = destW / destH;
 
-            let drawW = destW;
-            let drawH = destH;
-            let drawX = destX;
-            let drawY = destY;
+            let drawW, drawH, drawX, drawY;
 
             if (imgAspect > destAspect) {
+                drawW = destW;
                 drawH = destW / imgAspect;
+                drawX = destX;
                 drawY = destY + (destH - drawH) / 2;
             } else {
+                drawH = destH;
                 drawW = destH * imgAspect;
                 drawX = destX + (destW - drawW) / 2;
+                drawY = destY;
             }
 
             ctx.drawImage(photoCanvas, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
         });
 
-        // 3. TIMPA BINGKAI DI ATASNYA
+        // Timpa bingkai di paling atas
         ctx.drawImage(frameOverlay, 0, 0, width, height);
 
         document.getElementById('live-grid').style.display = 'none';
