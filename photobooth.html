@@ -14,6 +14,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -35,6 +36,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             text-align: center;
+            position: relative;
         }
 
         h2 {
@@ -46,7 +48,6 @@
             margin-bottom: 6px; 
         }
 
-        /* Status Hitung Mundur / Indikator Foto */
         .status-text {
             font-family: 'Poppins', sans-serif;
             font-size: 0.85rem;
@@ -57,19 +58,17 @@
             min-height: 20px;
         }
 
-        /* Area Wrapper Kamera & Frame */
         .booth-wrapper {
             position: relative;
             width: 100%;
             max-width: 360px;
             margin: 0 auto 18px auto;
-            aspect-ratio: 2 / 3; 
+            height: 0;
+            padding-bottom: 150%; 
             border-radius: 12px;
             overflow: hidden;
-            background-color: #1a1a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #000;
+            z-index: 1;
         }
 
         #webcam {
@@ -81,7 +80,6 @@
             object-fit: cover;
             transform: scaleX(-1);
             z-index: 1;
-            filter: contrast(105%);
         }
 
         #preview-canvas {
@@ -90,24 +88,22 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: fill;
             z-index: 3;
             display: none;
         }
 
-        /* Gambar Frame PNG Overlay */
         .frame-img {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; 
+            object-fit: fill !important;
             pointer-events: none;
             z-index: 2;
         }
 
-        /* Container Grid 6 Kotak (Disesuaikan dengan Frame Kamu) */
         .live-grid {
             position: absolute;
             top: 0;
@@ -119,13 +115,13 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
             
-            padding-top: 5.8%;
-            padding-bottom: 31.5%;
-            padding-left: 5.3%;
-            padding-right: 5.3%;
+            padding-top: 5.6%;
+            padding-bottom: 23.9%;
+            padding-left: 5.2%;
+            padding-right: 5.2%;
 
-            row-gap: 2.2%;
-            column-gap: 8.8%;
+            row-gap: 2.0%;
+            column-gap: 8.6%;
             
             box-sizing: border-box;
             pointer-events: none;
@@ -134,25 +130,18 @@
         .grid-box {
             width: 100%;
             height: 100%;
-            border-radius: 2px;
+            border-radius: 0px;
             background-color: #000;
             display: block;
         }
 
-        /* Tombol Navigasi & Aksi */
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        button, .btn-download, .btn-back {
+        .btn-action {
             font-family: 'Poppins', sans-serif;
             background-color: #f1d592;
             color: #500014;
             border: none;
-            padding: 12px 20px;
-            font-size: 0.9rem;
+            padding: 14px 20px;
+            font-size: 0.95rem;
             font-weight: 600;
             letter-spacing: 0.5px;
             border-radius: 25px;
@@ -160,11 +149,15 @@
             text-decoration: none;
             display: block;
             text-align: center;
-            transition: all 0.3s ease;
+            margin: 8px 0;
+            width: 100%;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        button:active, .btn-download:active {
-            transform: scale(0.97);
+        .btn-action:active {
+            opacity: 0.8;
+            transform: scale(0.98);
         }
 
         .btn-secondary {
@@ -177,7 +170,6 @@
             background-color: transparent;
             color: #f1d592;
             border: 1px solid #f1d592;
-            margin-top: 5px;
         }
     </style>
 </head>
@@ -188,10 +180,8 @@
         <div id="status" class="status-text">Siap untuk 6 foto!</div>
 
         <div class="booth-wrapper">
-            <!-- Video kamera disembunyikan (digunakan sebagai data stream) -->
             <video id="webcam" autoplay playsinline muted style="display: none;"></video>
     
-            <!-- Container 6 Grid untuk Live Preview -->
             <div id="live-grid" class="live-grid">
                 <canvas class="grid-box"></canvas>
                 <canvas class="grid-box"></canvas>
@@ -201,19 +191,14 @@
                 <canvas class="grid-box"></canvas>
             </div>
 
-            <!-- Canvas Hasil Foto Akhir -->
             <canvas id="preview-canvas" style="display: none;"></canvas>
-            
-            <!-- Frame Transparan PNG -->
             <img src="frame.png" id="frame-overlay" class="frame-img" alt="Frame">
         </div>
 
-        <div class="btn-group">
-            <button id="snap-btn">📸 Mulai Sesi (6 Foto)</button>
-            <a id="download-btn" class="btn-download" style="display: none;">⬇️ Download Hasil Foto</a>
-            <button id="reset-btn" class="btn-secondary" style="display: none;">🔄 Foto Ulang</button>
-            <a href="index.html" class="btn-back">⬅️ Kembali</a>
-        </div>
+        <a id="snap-btn" class="btn-action">📸 Mulai Sesi (6 Foto)</a>
+        <a id="download-btn" class="btn-action" style="display: none;">⬇️ Download Hasil Foto</a>
+        <a id="reset-btn" class="btn-action btn-secondary" style="display: none;">🔄 Foto Ulang</a>
+        <a href="index.html" class="btn-action btn-back">⬅️ Kembali</a>
     </div>
 
     <script>
@@ -229,18 +214,65 @@
     const ctx = previewCanvas.getContext('2d');
     let capturedPhotos = [];
     const totalPhotos = 6;
+    let isRunning = false;
+    let audioCtx = null;
 
-    // Koordinat Presisi Menyesuaikan Gambar Frame
+    // Kooridinat presisi per kotak
     const boxPositions = [
-        { x: 0.053, y: 0.058, w: 0.403, h: 0.228 }, // Kiri Atas
-        { x: 0.544, y: 0.058, w: 0.403, h: 0.228 }, // Kanan Atas
-        { x: 0.053, y: 0.308, w: 0.403, h: 0.228 }, // Kiri Tengah
-        { x: 0.544, y: 0.308, w: 0.403, h: 0.228 }, // Kanan Tengah
-        { x: 0.053, y: 0.558, w: 0.403, h: 0.228 }, // Kiri Bawah
-        { x: 0.544, y: 0.558, w: 0.403, h: 0.228 }  // Kanan Bawah
+        { x: 0.052, y: 0.056, w: 0.405, h: 0.222 },
+        { x: 0.543, y: 0.056, w: 0.405, h: 0.222 },
+
+        { x: 0.052, y: 0.298, w: 0.405, h: 0.222 },
+        { x: 0.543, y: 0.298, w: 0.405, h: 0.222 },
+
+        { x: 0.052, y: 0.539, w: 0.405, h: 0.222 },
+        { x: 0.543, y: 0.539, w: 0.405, h: 0.222 }
     ];
 
-    // Fungsi menggambar stream kamera ke 6 kotak live grid
+    function playCameraSound() {
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+
+            setTimeout(() => {
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                osc2.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.08);
+
+                gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.start();
+                osc2.stop(audioCtx.currentTime + 0.08);
+            }, 50);
+        } catch(e) {
+            console.log("Audio error", e);
+        }
+    }
+
+    // Mengembalikan ke sistem pratinjau biasa awal
     function drawLiveGrid() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             gridCanvases.forEach(canvas => {
@@ -284,32 +316,35 @@
         drawLiveGrid();
     });
 
-    // Akses Kamera
-    // KODE BARU (RAMAH UNTUK HP / MOBILE):
-const constraints = {
-    audio: false,
-    video: {
-        facingMode: "user", // Menggunakan kamera depan
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-    }
-};
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false
+    })
+    .then((stream) => { 
+        video.srcObject = stream; 
+        video.play().catch(e => console.log(e));
+    })
+    .catch((err) => { 
+        alert("Akses kamera gagal: " + err); 
+    });
 
-navigator.mediaDevices.getUserMedia(constraints)
-.then((stream) => { 
-    video.srcObject = stream; 
-    // Tambahkan play() manual agar HP tidak freeze
-    video.play().catch(e => console.log("Autoplay blocked:", e));
-})
-.catch((err) => { 
-    console.error("Gagal akses kamera: ", err);
-    alert("Gagal mengakses kamera. Pastikan memberikan izin kamera di browser HP kamu!"); 
-});s
-    // Sesi Ambil Foto
-    snapBtn.addEventListener('click', async () => {
+    function startSession(e) {
+        if(e) e.preventDefault();
+        if (isRunning) return;
+        
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        isRunning = true;
         snapBtn.style.display = 'none';
         capturedPhotos = [];
+        runPhotoLoop();
+    }
 
+    snapBtn.onclick = startSession;
+
+    async function runPhotoLoop() {
         for (let i = 1; i <= totalPhotos; i++) {
             for (let countdown = 3; countdown > 0; countdown--) {
                 statusText.innerText = `Foto ke-${i} dalam ${countdown}...`;
@@ -317,10 +352,11 @@ navigator.mediaDevices.getUserMedia(constraints)
             }
 
             statusText.innerText = `📸 *CEKREK!* (Foto ${i})`;
+            playCameraSound();
             
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = video.videoWidth || 600;
-            tempCanvas.height = video.videoHeight || 800;
+            tempCanvas.width = video.videoWidth || 720;
+            tempCanvas.height = video.videoHeight || 1280;
             const tempCtx = tempCanvas.getContext('2d');
             
             tempCtx.save();
@@ -335,9 +371,8 @@ navigator.mediaDevices.getUserMedia(constraints)
 
         statusText.innerText = "Selesai! Menyusun foto...";
         renderFinalFrame();
-    });
+    }
 
-    // Render Hasil Akhir ke Canvas
     function renderFinalFrame() {
         const width = frameOverlay.naturalWidth || 1200;
         const height = frameOverlay.naturalHeight || 1800;
@@ -373,10 +408,9 @@ navigator.mediaDevices.getUserMedia(constraints)
             ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
 
-        // Tempelkan Frame PNG
+        // Timpa bingkai di paling atas
         ctx.drawImage(frameOverlay, 0, 0, width, height);
 
-        // Tampilkan Preview
         document.getElementById('live-grid').style.display = 'none';
         previewCanvas.style.display = 'block';
 
@@ -397,15 +431,16 @@ navigator.mediaDevices.getUserMedia(constraints)
         }
     }
 
-    // Reset Foto Ulang
-    resetBtn.addEventListener('click', () => {
+    resetBtn.onclick = function(e) {
+        if(e) e.preventDefault();
+        isRunning = false;
         previewCanvas.style.display = 'none';
         document.getElementById('live-grid').style.display = 'grid';
         snapBtn.style.display = 'block';
         downloadBtn.style.display = 'none';
         resetBtn.style.display = 'none';
         statusText.innerText = "Siap untuk 6 foto!";
-    });
+    };
     </script>
 </body>
 </html>
