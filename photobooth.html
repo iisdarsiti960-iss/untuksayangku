@@ -263,10 +263,10 @@
     const boxPositions = [
         { x: 0.053, y: 0.058, w: 0.403, h: 0.230 }, // Kiri Atas
         { x: 0.544, y: 0.058, w: 0.403, h: 0.230 }, // Kanan Atas
-        { x: 0.053, y: 0.312, w: 0.403, h: 0.230 }, // Kiri Tengah (Turun ke 0.312)
-        { x: 0.544, y: 0.312, w: 0.403, h: 0.230 }, // Kanan Tengah (Turun ke 0.312)
-        { x: 0.053, y: 0.565, w: 0.403, h: 0.230 }, // Kiri Bawah  (Turun ke 0.565)
-        { x: 0.544, y: 0.565, w: 0.403, h: 0.230 }  // Kanan Bawah  (Turun ke 0.565)
+        { x: 0.053, y: 0.298, w: 0.403, h: 0.230 }, // Kiri Tengah
+        { x: 0.544, y: 0.298, w: 0.403, h: 0.230 }, // Kanan Tengah
+        { x: 0.053, y: 0.548, w: 0.403, h: 0.230 }, // Kiri Bawah
+        { x: 0.544, y: 0.548, w: 0.403, h: 0.230 }  // Kanan Bawah
     ];
 
     // Fungsi menggambar stream kamera ke 6 kotak live grid
@@ -382,8 +382,8 @@
        capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
-            const destY = pos.y * height;
-            // Ditambah sedikit toleransi piksel (+2) agar pasti masuk di belakang lis frame
+            const destY = (pos.y * height) - 8;
+           // Ditambah sedikit toleransi piksel (+2) agar pasti masuk di belakang lis frame
             const destW = (pos.w * width) + 2;
             const destH = (pos.h * height) + 4;
 
