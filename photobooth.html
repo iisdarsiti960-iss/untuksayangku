@@ -14,7 +14,6 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -58,25 +57,31 @@
             min-height: 20px;
         }
 
+        /* Area Wrapper Kamera & Frame */
         .booth-wrapper {
             position: relative;
             width: 100%;
             max-width: 360px;
             margin: 0 auto 18px auto;
-            height: 0;
-            padding-bottom: 150%; 
+            aspect-ratio: 2 / 3; 
             border-radius: 12px;
             overflow: hidden;
-            background-color: #000;
-            z-index: 1;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1; /* Pastikan tidak menutupi tombol */
         }
 
         #webcam {
             position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 1;
         }
 
         #preview-canvas {
@@ -85,22 +90,24 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: fill;
+            object-fit: fill; /* Kunci agar pas dengan wrapper */
             z-index: 3;
             display: none;
         }
 
+        /* Gambar Frame PNG Overlay */
         .frame-img {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: fill !important;
+            object-fit: fill; /* Diubah ke fill agar menutup penuh sempurna */
             pointer-events: none;
             z-index: 2;
         }
 
+        /* Container Grid 6 Kotak (Sesuai Ukuran Frame) */
         .live-grid {
             position: absolute;
             top: 0;
@@ -112,13 +119,13 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
             
-            padding-top: 5.6%;
-            padding-bottom: 23.9%;
-            padding-left: 5.2%;
-            padding-right: 5.2%;
+            padding-top: 5.8%;
+            padding-bottom: 21.2%;
+            padding-left: 5.3%;
+            padding-right: 5.3%;
 
-            row-gap: 2.0%;
-            column-gap: 8.6%;
+            row-gap: 2.2%;
+            column-gap: 8.8%;
             
             box-sizing: border-box;
             pointer-events: none;
@@ -127,17 +134,27 @@
         .grid-box {
             width: 100%;
             height: 100%;
+            border-radius: 2px;
             background-color: #000;
             display: block;
         }
 
-        .btn-action {
+        /* Container Tombol & Paksa Paling Depan */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            z-index: 999; /* Sangat depan agar pasti bisa diklik */
+        }
+
+        button, .btn-download, .btn-back {
             font-family: 'Poppins', sans-serif;
             background-color: #f1d592;
             color: #500014;
             border: none;
-            padding: 14px 20px;
-            font-size: 0.95rem;
+            padding: 12px 20px;
+            font-size: 0.9rem;
             font-weight: 600;
             letter-spacing: 0.5px;
             border-radius: 25px;
@@ -145,15 +162,14 @@
             text-decoration: none;
             display: block;
             text-align: center;
-            margin: 8px 0;
-            width: 100%;
-            user-select: none;
-            -webkit-user-select: none;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1000; /* BISA DIKLIK PASTI */
+            touch-action: manipulation;
         }
 
-        .btn-action:active {
-            opacity: 0.8;
-            transform: scale(0.98);
+        button:active, .btn-download:active {
+            transform: scale(0.97);
         }
 
         .btn-secondary {
@@ -166,6 +182,7 @@
             background-color: transparent;
             color: #f1d592;
             border: 1px solid #f1d592;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -176,7 +193,7 @@
         <div id="status" class="status-text">Siap untuk 6 foto!</div>
 
         <div class="booth-wrapper">
-            <video id="webcam" autoplay playsinline muted></video>
+            <video id="webcam" autoplay playsinline muted style="display: none;"></video>
     
             <div id="live-grid" class="live-grid">
                 <canvas class="grid-box"></canvas>
@@ -191,10 +208,12 @@
             <img src="frame.png" id="frame-overlay" class="frame-img" alt="Frame">
         </div>
 
-        <a id="snap-btn" class="btn-action">📸 Mulai Sesi (6 Foto)</a>
-        <a id="download-btn" class="btn-action" style="display: none;">⬇️ Download Hasil Foto</a>
-        <a id="reset-btn" class="btn-action btn-secondary" style="display: none;">🔄 Foto Ulang</a>
-        <a href="index.html" class="btn-action btn-back">⬅️ Kembali</a>
+        <div class="btn-group">
+            <button id="snap-btn" type="button">📸 Mulai Sesi (6 Foto)</button>
+            <a id="download-btn" class="btn-download" style="display: none;">⬇️ Download Hasil Foto</a>
+            <button id="reset-btn" class="btn-secondary" style="display: none;" type="button">🔄 Foto Ulang</button>
+            <a href="index.html" class="btn-back">⬅️ Kembali</a>
+        </div>
     </div>
 
     <script>
@@ -210,133 +229,50 @@
     const ctx = previewCanvas.getContext('2d');
     let capturedPhotos = [];
     const totalPhotos = 6;
-    let isRunning = false;
-    let audioCtx = null;
 
     const boxPositions = [
-        { x: 0.052, y: 0.056, w: 0.405, h: 0.222 },
-        { x: 0.543, y: 0.056, w: 0.405, h: 0.222 },
-
-        { x: 0.052, y: 0.298, w: 0.405, h: 0.222 },
-        { x: 0.543, y: 0.298, w: 0.405, h: 0.222 },
-
-        { x: 0.052, y: 0.539, w: 0.405, h: 0.222 },
-        { x: 0.543, y: 0.539, w: 0.405, h: 0.222 }
+        { x: 0.053, y: 0.058, w: 0.403, h: 0.228 },
+        { x: 0.544, y: 0.058, w: 0.403, h: 0.228 },
+        { x: 0.053, y: 0.308, w: 0.403, h: 0.228 },
+        { x: 0.544, y: 0.308, w: 0.403, h: 0.228 },
+        { x: 0.053, y: 0.558, w: 0.403, h: 0.228 },
+        { x: 0.544, y: 0.558, w: 0.403, h: 0.228 }
     ];
-
-    function playCameraSound() {
-        try {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
-
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.05);
-
-            setTimeout(() => {
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.type = 'triangle';
-                osc2.frequency.setValueAtTime(1000, audioCtx.currentTime);
-                osc2.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.08);
-
-                gain2.gain.setValueAtTime(0.4, audioCtx.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-                osc2.start();
-                osc2.stop(audioCtx.currentTime + 0.08);
-            }, 50);
-        } catch(e) {
-            console.log("Audio error", e);
-        }
-    }
-
-    // FUNGSI PENGGAMBARAN UTAMA: DILENGKAPI DETEKSI ORIENTASI & EFEK CERMIN
-    function drawVideoToCanvas(targetCanvas, targetWidth, targetHeight) {
-        const gCtx = targetCanvas.getContext('2d');
-        const vW = video.videoWidth;
-        const vH = video.videoHeight;
-        if (!vW || !vH) return;
-
-        if (targetCanvas.width !== targetWidth || targetCanvas.height !== targetHeight) {
-            targetCanvas.width = targetWidth;
-            targetCanvas.height = targetHeight;
-        }
-
-        gCtx.save();
-        gCtx.clearRect(0, 0, targetWidth, targetHeight);
-
-        // Deteksi apakah sinyal kamera HP miring/landscape (vW > vH)
-        const isLandscapeStream = vW > vH;
-
-        if (isLandscapeStream) {
-            // Rotasi canvas 90 derajat agar wajah tegak lurus
-            gCtx.translate(targetWidth / 2, targetHeight / 2);
-            gCtx.rotate((90 * Math.PI) / 180);
-            gCtx.scale(-1, 1); // Mirror horizontal
-
-            // Dimensi efektif setelah diputar
-            const effW = vH;
-            const effH = vW;
-
-            const boxAspect = targetWidth / targetHeight;
-            const streamAspect = effW / effH;
-
-            let sW = vH, sH = vW, sX = 0, sY = 0;
-
-            if (streamAspect > boxAspect) {
-                sW = vW * boxAspect;
-                sX = (vH - sW) / 2;
-            } else {
-                sH = vH / boxAspect;
-                sY = (vW - sH) / 2;
-            }
-
-            gCtx.drawImage(video, 0, 0, vW, vH, -targetHeight / 2, -targetWidth / 2, targetHeight, targetWidth);
-        } else {
-            // Sinyal kamera sudah tegak alami
-            const videoAspect = vW / vH;
-            const boxAspect = targetWidth / targetHeight;
-
-            let sX = 0, sY = 0, sW = vW, sH = vH;
-
-            if (videoAspect > boxAspect) {
-                sW = vH * boxAspect;
-                sX = (vW - sW) / 2;
-            } else {
-                sH = vW / boxAspect;
-                sY = (vH - sH) / 2;
-            }
-
-            gCtx.translate(targetWidth, 0);
-            gCtx.scale(-1, 1);
-            gCtx.drawImage(video, sX, sY, sW, sH, 0, 0, targetWidth, targetHeight);
-        }
-
-        gCtx.restore();
-    }
 
     function drawLiveGrid() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             gridCanvases.forEach(canvas => {
+                const gCtx = canvas.getContext('2d');
+                
                 const rect = canvas.getBoundingClientRect();
-                drawVideoToCanvas(canvas, rect.width, rect.height);
+                if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                }
+
+                const vW = video.videoWidth;
+                const vH = video.videoHeight;
+                const cW = canvas.width;
+                const cH = canvas.height;
+
+                const videoAspect = vW / vH;
+                const canvasAspect = cW / cH;
+
+                let sX = 0, sY = 0, sW = vW, sH = vH;
+
+                if (videoAspect > canvasAspect) {
+                    sW = vH * canvasAspect;
+                    sX = (vW - sW) / 2;
+                } else {
+                    sH = vW / canvasAspect;
+                    sY = (vH - sH) / 2;
+                }
+
+                gCtx.save();
+                gCtx.translate(cW, 0);
+                gCtx.scale(-1, 1);
+                gCtx.drawImage(video, sX, sY, sW, sH, 0, 0, cW, cH);
+                gCtx.restore();
             });
         }
         requestAnimationFrame(drawLiveGrid);
@@ -346,13 +282,8 @@
         drawLiveGrid();
     });
 
-    // MINTA RESOLUSI PORTRAIT KHUSUS DARI KAMERA HP
     navigator.mediaDevices.getUserMedia({
-        video: { 
-            facingMode: "user",
-            width: { ideal: 720 },
-            height: { ideal: 1280 }
-        },
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false
     })
     .then((stream) => { 
@@ -363,21 +294,16 @@
         alert("Akses kamera gagal: " + err); 
     });
 
+    // Jalankan sesi foto (Mendukung Klik & Sentuhan Layar HP)
     function startSession(e) {
         if(e) e.preventDefault();
-        if (isRunning) return;
-        
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        isRunning = true;
         snapBtn.style.display = 'none';
         capturedPhotos = [];
         runPhotoLoop();
     }
 
-    snapBtn.onclick = startSession;
+    snapBtn.addEventListener('click', startSession);
+    snapBtn.addEventListener('touchstart', startSession);
 
     async function runPhotoLoop() {
         for (let i = 1; i <= totalPhotos; i++) {
@@ -387,12 +313,17 @@
             }
 
             statusText.innerText = `📸 *CEKREK!* (Foto ${i})`;
-            playCameraSound();
             
             const tempCanvas = document.createElement('canvas');
-            const targetW = 400;
-            const targetH = 300;
-            drawVideoToCanvas(tempCanvas, targetW, targetH);
+            tempCanvas.width = video.videoWidth || 600;
+            tempCanvas.height = video.videoHeight || 800;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.save();
+            tempCtx.translate(tempCanvas.width, 0);
+            tempCtx.scale(-1, 1);
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.restore();
 
             capturedPhotos.push(tempCanvas);
             await new Promise(r => setTimeout(r, 800));
@@ -418,7 +349,23 @@
             const destW = pos.w * width;
             const destH = pos.h * height;
 
-            ctx.drawImage(photoCanvas, 0, 0, photoCanvas.width, photoCanvas.height, destX, destY, destW, destH);
+            const imgW = photoCanvas.width;
+            const imgH = photoCanvas.height;
+
+            const imgAspect = imgW / imgH;
+            const destAspect = destW / destH;
+
+            let srcX = 0, srcY = 0, srcW = imgW, srcH = imgH;
+
+            if (imgAspect > destAspect) {
+                srcW = imgH * destAspect;
+                srcX = (imgW - srcW) / 2;
+            } else {
+                srcH = imgW / destAspect;
+                srcY = (imgH - srcH) / 2;
+            }
+
+            ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
         });
 
         ctx.drawImage(frameOverlay, 0, 0, width, height);
@@ -443,16 +390,14 @@
         }
     }
 
-    resetBtn.onclick = function(e) {
-        if(e) e.preventDefault();
-        isRunning = false;
+    resetBtn.addEventListener('click', () => {
         previewCanvas.style.display = 'none';
         document.getElementById('live-grid').style.display = 'grid';
         snapBtn.style.display = 'block';
         downloadBtn.style.display = 'none';
         resetBtn.style.display = 'none';
         statusText.innerText = "Siap untuk 6 foto!";
-    };
+    });
     </script>
 </body>
 </html>
