@@ -259,14 +259,14 @@
         }
     }
 
-    // Koordinat Presisi Menyesuaikan Gambar Frame
+   // GANTI BAGIAN INI SAJA:
     const boxPositions = [
-        { x: 0.053, y: 0.058, w: 0.403, h: 0.228 }, // Kiri Atas
-        { x: 0.544, y: 0.058, w: 0.403, h: 0.228 }, // Kanan Atas
-       { x: 0.053, y: 0.298, w: 0.403, h: 0.228  }, // Kiri Tengah
-        { x: 0.544, y: 0.298, w: 0.403, h: 0.228  }, // Kanan Tengah
-        { x: 0.053, y: 0.546, w: 0.403, h: 0.228  }, // Kiri Bawah
-        { x: 0.544, y: 0.546, w: 0.403, h: 0.228  }  // Kanan Bawah
+        { x: 0.053, y: 0.058, w: 0.403, h: 0.235 }, // Kiri Atas
+        { x: 0.544, y: 0.058, w: 0.403, h: 0.235 }, // Kanan Atas
+        { x: 0.053, y: 0.308, w: 0.403, h: 0.235 }, // Kiri Tengah
+        { x: 0.544, y: 0.308, w: 0.403, h: 0.235 }, // Kanan Tengah
+        { x: 0.053, y: 0.558, w: 0.403, h: 0.235 }, // Kiri Bawah
+        { x: 0.544, y: 0.558, w: 0.403, h: 0.235 }  // Kanan Bawah
     ];
 
     // Fungsi menggambar stream kamera ke 6 kotak live grid
@@ -379,12 +379,13 @@
 
         ctx.clearRect(0, 0, width, height);
 
-        capturedPhotos.forEach((photoCanvas, index) => {
+       capturedPhotos.forEach((photoCanvas, index) => {
             const pos = boxPositions[index];
             const destX = pos.x * width;
             const destY = pos.y * height;
-            const destW = pos.w * width;
-            const destH = pos.h * height;
+            // Ditambah sedikit toleransi piksel (+2) agar pasti masuk di belakang lis frame
+            const destW = (pos.w * width) + 2;
+            const destH = (pos.h * height) + 4;
 
             const imgW = photoCanvas.width;
             const imgH = photoCanvas.height;
@@ -402,7 +403,7 @@
                 srcY = (imgH - srcH) / 2;
             }
 
-            ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+            ctx.drawImage(photoCanvas, srcX, srcY, srcW, srcH, destX - 1, destY - 1, destW, destH);
         });
 
         // Tempelkan Frame PNG
